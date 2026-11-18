@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
+	"io"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -12,7 +12,7 @@ import (
 // scratch database: the []string -> TEXT[]::NUMERIC[] array path and the
 // []bool -> BOOLEAN[] path, over real block/transaction/evt_log/address
 // fixture rows. Enabled by CZCHECK_INSERTS=1.
-func insertCheck(ctx context.Context, dsn string) error {
+func insertCheck(ctx context.Context, dsn string, out io.Writer) error {
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
 		return fmt.Errorf("connect: %w", err)
@@ -81,16 +81,6 @@ func insertCheck(ctx context.Context, dsn string) error {
 	if roundTripped != allocations[7] {
 		return fmt.Errorf("allocations[8] round-trip mismatch: %s", roundTripped)
 	}
-	fmt.Println("insert shapes verified (uint256 max survives NUMERIC[])")
+	fmt.Fprintln(out, "insert shapes verified (uint256 max survives NUMERIC[])")
 	return nil
-}
-
-func maybeInsertCheck(ctx context.Context, dsn string) {
-	if os.Getenv("CZCHECK_INSERTS") != "1" {
-		return
-	}
-	if err := insertCheck(ctx, dsn); err != nil {
-		fmt.Fprintln(os.Stderr, "insert check:", err)
-		os.Exit(1)
-	}
 }

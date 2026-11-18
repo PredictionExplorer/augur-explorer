@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/PredictionExplorer/augur-explorer/internal/store"
 	marketstore "github.com/PredictionExplorer/augur-explorer/internal/store/marketplace"
@@ -33,10 +32,6 @@ func NewRepo(st *store.Store) *Repo {
 // pool. Every query method runs through it, which is what lets the indexer
 // commit a block's domain writes atomically with its watermark.
 func (r *Repo) q(ctx context.Context) store.Querier { return r.store.Querier(ctx) }
-
-// pool exposes the raw connection pool for the integration tests' fixture
-// mutation and cleanup SQL, which must run outside any transaction.
-func (r *Repo) pool() *pgxpool.Pool { return r.store.Pool() }
 
 // addrID resolves addr to its address_id through the shared Store's
 // lookup-or-create cache; the insert methods use it for every foreign-key

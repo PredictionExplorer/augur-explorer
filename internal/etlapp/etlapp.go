@@ -155,6 +155,9 @@ func Run(
 		Metrics:   metrics,
 		TopicName: module.Registry.TopicName,
 	})
+	// The error branch below is unreachable through Run(): indexer.New only
+	// rejects a nil Store/Client, both built above. Kept as a guard against
+	// future constructor validation.
 	if err != nil {
 		return fmt.Errorf("can't build indexer engine: %w", err)
 	}

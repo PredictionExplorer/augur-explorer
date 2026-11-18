@@ -1,6 +1,7 @@
 # ETL indexer unit template. The instance name selects binary and config:
 #   systemctl enable rwcg-etl@cg   -> /opt/rwcg/bin/cg-etl, /etc/rwcg/etl-cg.env
 #   systemctl enable rwcg-etl@rw   -> /opt/rwcg/bin/rw-etl, /etc/rwcg/etl-rw.env
+#   systemctl enable rwcg-etl@cz   -> /opt/rwcg/bin/cz-etl, /etc/rwcg/etl-cz.env
 #
 # This replaces the legacy nohup run-loop.sh scripts.
 

@@ -423,9 +423,12 @@ func restoreRankingFixture(t *testing.T, h *harness) {
 	if _, err := h.db.Exec(`DELETE FROM rw_ranking_match WHERE id > 2`); err != nil {
 		t.Fatalf("restoring rw_ranking_match: %v", err)
 	}
-	// Fixture addresses stop at address_id 28 (see seed/01_layer1.sql); any
-	// higher id was created by a signed-vote test run.
-	if _, err := h.db.Exec(`DELETE FROM address WHERE address_id > 28`); err != nil {
+	// Fixture addresses stop at address_id 33 (28 in seed/01_layer1.sql plus
+	// the ChaosZero contracts 31-33 in seed/04_chaoszero.sql); any higher id
+	// was created by a signed-vote test run. Deleting from 29 up would wipe
+	// the ChaosZero contract addresses, whose INNER JOINs then silently drop
+	// rows from the parity responses (an order-dependent golden flake).
+	if _, err := h.db.Exec(`DELETE FROM address WHERE address_id > 33`); err != nil {
 		t.Fatalf("restoring address table: %v", err)
 	}
 	if _, err := h.db.Exec(`

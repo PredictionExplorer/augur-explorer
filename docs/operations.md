@@ -29,6 +29,7 @@ make build
 # Run the indexers (need RPC_URL for Arbitrum)
 ./bin/cg-etl
 ./bin/rw-etl
+./bin/cz-etl   # ChaosZero indexer; same env contract as cg-etl/rw-etl
 ```
 
 Or run the full stack in containers: `docker compose --profile etl up`.
@@ -127,7 +128,7 @@ Unit files live in `deploy/systemd/`. Layout on the host:
 sudo cp deploy/systemd/*.service deploy/systemd/*.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now rwcg-apiserver@cosmic rwcg-apiserver@rwalk
-sudo systemctl enable --now rwcg-etl@cg rwcg-etl@rw
+sudo systemctl enable --now rwcg-etl@cg rwcg-etl@rw rwcg-etl@cz
 sudo systemctl enable --now rwcg-notibot rwcg-imggen-monitor.timer \
   rwcg-loganomaly.timer
 ```
@@ -253,7 +254,7 @@ policy the bounds are fixed constants — there are no environment switches.
 - **Server-side statement timeouts (defense in depth).** The services set
   PostgreSQL session GUCs on every pool connection: `statement_timeout`
   30s on the apiserver (matching the request deadline) and 60s on
-  cg-etl/rw-etl/notibot/imggen-monitor; `idle_in_transaction_session_timeout`
+  cg-etl/rw-etl/cz-etl/notibot/imggen-monitor; `idle_in_transaction_session_timeout`
   5m everywhere. These fire only when client-side cancellation never
   reaches the server (SQLSTATE `57014` / `25P03` in the logs — investigate,
   they mean the primary bound failed). Operator CLIs (`opsctl`, `cgctl`,
@@ -412,7 +413,7 @@ series simply lack it.
   # Sustained saturation: every connection checked out
   rwcg_db_pool_acquired_conns >= rwcg_db_pool_max_conns
   ```
-- The ETLs (`cg-etl`, `rw-etl`) honor `METRICS_ADDR` too (each process needs
+- The ETLs (`cg-etl`, `rw-etl`, `cz-etl`) honor `METRICS_ADDR` too (each process needs
   its own port on a shared host) and expose `rwcg_etl_last_block` (the
   processing watermark — alert when it stops advancing),
   `rwcg_etl_events_total{type}`, `rwcg_etl_batch_duration_seconds`,

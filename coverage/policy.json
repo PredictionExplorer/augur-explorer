@@ -13,6 +13,7 @@
     "internal/api/v2/api.gen.go"
   ],
   "excludePrefixes": [
+    "cmd/czmigratecheck/",
     "internal/api/apitest/",
     "internal/testchain/",
     "internal/testdb/",

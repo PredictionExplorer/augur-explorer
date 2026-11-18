@@ -949,8 +949,6 @@ func TestCstAuctionLengthValidationSetupAndErrors(t *testing.T) {
 }
 
 func TestAssetSmokeAndScanDefaultDependencyAdapters(t *testing.T) {
-	_ = runVerifyTokenImages
-
 	db := newCommandTestDB(t)
 	if _, ok := defaultAssetsInventoryDeps().newSource(db).(opsassets.SQLTokenSource); !ok {
 		t.Fatal("default inventory source is not SQLTokenSource")

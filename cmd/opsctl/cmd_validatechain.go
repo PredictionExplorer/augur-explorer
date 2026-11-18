@@ -245,10 +245,6 @@ func bigIntSliceEqual(a, b []*big.Int) bool {
 	return true
 }
 
-func one(n *big.Int, err error) func() ([]*big.Int, error) {
-	return func() ([]*big.Int, error) { return []*big.Int{n}, err }
-}
-
 // labeledContract is one tracked emitter: the registry contracts plus every
 // implementation the proxy has pointed at.
 type labeledContract struct {

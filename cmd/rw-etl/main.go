@@ -92,6 +92,9 @@ func wireRandomWalk(ctx context.Context, deps etlapp.Deps) (etlapp.Module, error
 		Contracts: contracts,
 		Logger:    deps.Logger,
 	})
+	// The error branch below is unreachable through run(): rwindexer.New only
+	// rejects a nil Repo, and this wiring always supplies one. Kept as a
+	// guard against future constructor validation.
 	if err != nil {
 		return etlapp.Module{}, fmt.Errorf("can't build event handlers: %w", err)
 	}

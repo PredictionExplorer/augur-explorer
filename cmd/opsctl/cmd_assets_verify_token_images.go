@@ -72,10 +72,6 @@ The database connection is built from the PGSQL_* environment variables.`,
 	return cmd
 }
 
-func runVerifyTokenImages(cmd *cobra.Command) error {
-	return runVerifyTokenImagesWithDeps(cmd, defaultAssetsVerifyTokenImagesDeps())
-}
-
 func runVerifyTokenImagesWithDeps(cmd *cobra.Command, deps assetsVerifyTokenImagesDeps) error {
 	ctx := cmd.Context()
 	info := log.New(cmd.OutOrStdout(), "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)

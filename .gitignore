@@ -2,10 +2,16 @@
 /bin/
 /dist/
 
-# Stray `go build` binaries at the repo root (use `make build` → bin/)
+# Stray `go build` binaries (use `make build` → bin/). Each cmd/<name>
+# package can leave a binary at the repo root (`go build ./cmd/<name>`) or
+# inside its own directory (`go build` from cmd/<name>); ignore both.
+/apiexplorer
 /apiserver
 /cg-etl
 /cgctl
+/covergate
+/cz-etl
+/czmigratecheck
 /freezer-scan
 /freezer-verify
 /imggen-monitor
@@ -16,6 +22,23 @@
 /rwalk-alarm
 /rwctl
 /srvmonitor
+cmd/apiexplorer/apiexplorer
+cmd/apiserver/apiserver
+cmd/cg-etl/cg-etl
+cmd/cgctl/cgctl
+cmd/covergate/covergate
+cmd/cz-etl/cz-etl
+cmd/czmigratecheck/czmigratecheck
+cmd/freezer-scan/freezer-scan
+cmd/freezer-verify/freezer-verify
+cmd/imggen-monitor/imggen-monitor
+cmd/loganomaly/loganomaly
+cmd/notibot/notibot
+cmd/opsctl/opsctl
+cmd/rw-etl/rw-etl
+cmd/rwalk-alarm/rwalk-alarm
+cmd/rwctl/rwctl
+cmd/srvmonitor/srvmonitor
 
 # Test and coverage artifacts
 *.test
@@ -31,6 +54,10 @@ go.work.sum
 .env.*
 !.env.example
 
+# Tooling caches and vendored dependencies
+__pycache__/
+node_modules/
+
 # Editor and OS noise
 .idea/
 .vscode/
@@ -41,7 +68,5 @@ go.work.sum
 # Log files
 *.log
 
-cmd/apiexplorer/apiexplorer
-cmd/apiserver/apiserver
-cmd/cg-etl/cg-etl
-cmd/rw-etl/rw-etl
+# Developer-local deployment descriptors produced by dev-scripts
+cmd/cz-etl/dev-scripts/cz-local-deployment.json

@@ -204,6 +204,9 @@ func wireCosmicGame(ctx context.Context, deps etlapp.Deps) (etlapp.Module, error
 		Contracts: contracts,
 		Logger:    logger,
 	})
+	// The error branch below is unreachable through run(): cgindexer.New only
+	// rejects a nil Repo/Store/Caller, and this wiring always supplies them.
+	// Kept as a guard against future constructor validation.
 	if err != nil {
 		return etlapp.Module{}, fmt.Errorf("can't build event handlers: %w", err)
 	}
