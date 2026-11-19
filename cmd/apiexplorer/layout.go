@@ -20,10 +20,16 @@ import (
 
 // pageMeta carries request facts into the layout.
 type pageMeta struct {
-	Project string // "cosmicsignature", "randomwalk" or ""
-	Path    string // request path, highlights the sidebar entry
-	API     string // resolved API path ("" for static pages)
-	View    string // "" (page template) or "fields" (generic field view)
+	Project string     // "cosmicsignature", "randomwalk" or ""
+	Path    string     // request path, highlights the sidebar entry
+	API     string     // resolved API path ("" for static pages)
+	View    string     // "" (page template) or "fields" (generic field view)
+	Usage   *usageInfo // "How to use this request" footer (nil = none)
+
+	// Truncated lists the response fields capped at maxTableRows and
+	// FullURL re-requests the page uncapped; see truncate.go.
+	Truncated []listCap
+	FullURL   string
 }
 
 type layoutData struct {

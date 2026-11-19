@@ -66,7 +66,13 @@ func (s *server) fetchDashboard(ctx context.Context) (map[string]any, error) {
 }
 
 func (s *server) dashboardHandler(w http.ResponseWriter, r *http.Request) {
-	meta := pageMeta{Project: "cosmicsignature", Path: r.URL.Path, API: dashboardAPI}
+	meta := pageMeta{Project: "cosmicsignature", Path: r.URL.Path, API: dashboardAPI, Usage: &usageInfo{
+		Origin:     requestOrigin(r),
+		Pattern:    "/cosmicsignature/",
+		Example:    r.URL.Path,
+		APIPattern: dashboardAPI,
+		Notes:      "The dashboard aggregates several API calls; the main one is shown above.",
+	}}
 	if r.URL.Query().Get("view") == "fields" {
 		data, err := s.fetch(r.Context(), dashboardAPI)
 		if err != nil {

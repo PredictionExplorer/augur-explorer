@@ -53,7 +53,31 @@
 	{{end}}
 
 	<main class="content">
+		{{if .Truncated}}
+		<div class="trunc-note">
+			{{range $i, $c := .Truncated}}{{if $i}} &middot; {{end}}Showing only the first {{$c.Shown}} of {{$c.Total}} {{$c.Name}} records{{end}}
+			— <a href="{{.FullURL}}">show the full table</a>
+		</div>
+		{{end}}
 		{{.Content}}
+		{{with .Usage}}
+		<section class="usage">
+			<h2>How to use this request</h2>
+			<table class="usage-req mono">
+				<tr><th>Request</th><td>GET {{.Origin}}{{.Pattern}}</td></tr>
+				<tr><th>Example</th><td><a href="{{.Example}}">{{.Origin}}{{.Example}}</a></td></tr>
+				{{if .APIPattern}}
+				<tr><th>API JSON</th><td>GET {{$.APIBase}}{{.APIPattern}}{{if $.API}} &middot; <a href="{{$.API}}" target="_blank" rel="noopener">this page&#8217;s data</a>{{end}}</td></tr>
+				{{end}}
+			</table>
+			{{if .Params}}
+			<dl class="usage-params">
+				{{range .Params}}<dt class="mono">{{.Name}}</dt><dd>{{.Desc}}</dd>{{end}}
+			</dl>
+			{{end}}
+			{{if .Notes}}<p class="usage-notes">{{.Notes}}</p>{{end}}
+		</section>
+		{{end}}
 	</main>
 
 	<aside class="json-drawer" id="json-drawer" hidden>

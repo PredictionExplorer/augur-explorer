@@ -377,7 +377,7 @@ func injectParams(data map[string]any, api string, get func(string) string) {
 func (s *server) pageHandler(p page) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := map[string]any{}
-		meta := pageMeta{Project: projectOf(r.URL.Path), Path: r.URL.Path}
+		meta := pageMeta{Project: projectOf(r.URL.Path), Path: r.URL.Path, Usage: usageFor(p, r)}
 		if p.API != "" {
 			apiPath := p.API
 			for _, name := range paramNames(p.API) {
@@ -391,6 +391,7 @@ func (s *server) pageHandler(p page) http.HandlerFunc {
 				s.renderError(w, http.StatusBadGateway, err.Error())
 				return
 			}
+			capResponse(&meta, data, r)
 			if r.URL.Query().Get("view") == "fields" {
 				s.renderFields(w, data, meta)
 				return

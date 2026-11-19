@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // The Bids page lists one round at a time, picked with ?round=N (default:
@@ -139,7 +140,14 @@ func (s *server) currentRound(ctx context.Context) (int, error) {
 }
 
 func (s *server) bidsHandler(w http.ResponseWriter, r *http.Request) {
-	meta := pageMeta{Project: "cosmicsignature", Path: r.URL.Path}
+	meta := pageMeta{Project: "cosmicsignature", Path: r.URL.Path, Usage: &usageInfo{
+		Origin:     requestOrigin(r),
+		Pattern:    "/cosmicsignature/bids",
+		Example:    r.URL.Path,
+		APIPattern: strings.Replace(bidsByRoundAPI, "%d", "{round_num}", 1),
+		Notes: "Query string: ?round=N shows one round (default: the current round); " +
+			"?round=all lists every bid of every round (API " + bidsAllAPI + ").",
+	}}
 	cur, err := s.currentRound(r.Context())
 	if err != nil {
 		s.log.Error("API fetch failed", "api_path", dashboardAPI, "err", err)
@@ -169,6 +177,11 @@ func (s *server) bidsHandler(w http.ResponseWriter, r *http.Request) {
 		data["CstTotals"] = annotateCstSupply(list)
 	}
 	data["Bids"] = data[rows]
+	if rows != "Bids" {
+		delete(data, rows) // one key per list, or the cap banner reports it twice
+	}
+	// Cap after the totals above, so they still cover every bid.
+	capResponse(&meta, data, r)
 	data["CurRoundNum"] = cur
 	data["RoundChoices"] = roundChoices(cur)
 	data["AllRounds"] = all

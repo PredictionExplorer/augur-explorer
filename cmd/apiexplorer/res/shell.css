@@ -578,3 +578,64 @@ body.full-hex .hx .hx-full { display: inline; }
 .dim { color: var(--muted); }
 .warn { color: #ff9800; }
 .ok { color: #7cc47c; }
+
+/* First-fetch row-cap banner */
+.trunc-note {
+	margin: 0.4em 0 0.6em;
+	padding: 0.45em 0.8em;
+	border: 1px solid var(--line);
+	border-left: 3px solid #ff9800;
+	background: #141005;
+	color: var(--muted);
+	font-size: 12.5px;
+}
+
+.trunc-note a { color: var(--gold); }
+
+/* Per-page usage footer ("How to use this request") */
+.usage {
+	margin-top: 2.5em;
+	padding: 0.7em 0.9em 0.8em;
+	border: 1px solid var(--line);
+	border-left: 3px solid var(--gold);
+	background: #0c0c0c;
+	font-size: 12.5px;
+	color: var(--fg);
+	max-width: 70em;
+}
+
+.usage h2 {
+	margin: 0 0 0.6em;
+	font-size: 11.5px;
+	color: var(--gold);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.usage-req { border-collapse: collapse; }
+
+.usage-req th {
+	text-align: left;
+	font-weight: normal;
+	color: var(--muted);
+	padding: 0.1em 1.2em 0.1em 0;
+	white-space: nowrap;
+	vertical-align: top;
+}
+
+.usage-req td { padding: 0.1em 0; word-break: break-all; }
+.usage-req td a { color: var(--gold); }
+
+.usage-params {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 0.3em 1.2em;
+	margin: 0.8em 0 0;
+	padding-top: 0.6em;
+	border-top: 1px dashed var(--line);
+}
+
+.usage-params dt { color: var(--gold); }
+.usage-params dd { margin: 0; color: var(--muted); }
+
+.usage-notes { margin: 0.8em 0 0; color: var(--muted); }
