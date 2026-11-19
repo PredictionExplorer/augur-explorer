@@ -128,6 +128,48 @@ func backfillPrizesWalletAfterCommit(
 	}
 }
 
+// backfillArtAuctionAfterCommit is backfillPrizesWalletAfterCommit for an
+// art-auction contract announced by ArtAuctionConfigured (V4): wait for the
+// announcement block to commit, then backfill the contract's events up to
+// the committed watermark. Failures are logged, not fatal:
+// RecoverArtAuctionEvents repeats the attempt on the next run.
+func backfillArtAuctionAfterCommit(
+	ctx context.Context,
+	logger *slog.Logger,
+	progress blockWatermark,
+	handlers *cgindexer.Handlers,
+	engine *indexer.Engine,
+	process indexer.ProcessFunc,
+	auction ethcommon.Address,
+	blockNum int64,
+) {
+	if blockNum < 0 {
+		return
+	}
+	deadline := time.Now().Add(implementationCommitWait)
+	var last int64
+	for {
+		var err error
+		last, err = progress.LastBlock(ctx)
+		if err == nil && last >= blockNum {
+			break
+		}
+		if ctx.Err() != nil {
+			return
+		}
+		if time.Now().After(deadline) {
+			logger.Warn("art auction backfill skipped: announcement block not committed in time",
+				"art_auction", auction.Hex(), "block", blockNum)
+			return
+		}
+		time.Sleep(time.Second)
+	}
+	if _, err := handlers.BackfillArtAuctionEvents(ctx, engine, process, auction, uint64(blockNum), uint64(last)); err != nil {
+		logger.Error("art auction backfill failed; the startup recovery pass will retry",
+			"art_auction", auction.Hex(), "block", blockNum, "err", err)
+	}
+}
+
 // cgProgress adapts the cg_proc_status row to the engine's watermark
 // interface, preserving last_evt_id across writes.
 type cgProgress struct {
@@ -266,6 +308,20 @@ func wireCosmicGame(ctx context.Context, deps etlapp.Deps) (etlapp.Module, error
 		handlers.SetOnNewPrizesWallet(func(_ context.Context, wallet ethcommon.Address, blockNum int64) {
 			engine.AddContracts(wallet)
 			go backfillPrizesWalletAfterCommit(ctx, logger, progress, handlers, engine, process, wallet, blockNum)
+		})
+
+		// Art auctions (V4): a new contract (ArtAuctionConfigured) joins the
+		// FilterLogs set at once, with the announcement batch re-covered by
+		// a backfill once it commits; the startup pass repairs a crash
+		// between the two. Before the V4 upgrade both are no-ops.
+		if lastBlock, err := progress.LastBlock(ctx); err != nil {
+			return fmt.Errorf("art auction event recovery: read watermark: %w", err)
+		} else if err := handlers.RecoverArtAuctionEvents(ctx, engine, process, lastBlock); err != nil {
+			return fmt.Errorf("art auction event recovery failed: %w", err)
+		}
+		handlers.SetOnNewArtAuction(func(_ context.Context, auction ethcommon.Address, blockNum int64) {
+			engine.AddContracts(auction)
+			go backfillArtAuctionAfterCommit(ctx, logger, progress, handlers, engine, process, auction, blockNum)
 		})
 		return nil
 	}

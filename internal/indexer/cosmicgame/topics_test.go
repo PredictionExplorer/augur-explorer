@@ -39,6 +39,8 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 	token := mustABI(t, cgc.CosmicSignatureTokenABI)
 	dao := mustABI(t, cgc.CosmicSignatureDaoABI)
 	stakingCSTImpl := mustABI(t, cgc.StakingWalletCosmicSignatureNftABI)
+	gameV4 := mustABI(t, cgc.GameV4ABI)
+	artAuction := mustABI(t, cgc.ArtAuctionABI)
 
 	cases := []struct {
 		constant string
@@ -148,6 +150,21 @@ func TestRegistryConstantsMatchABIEventIDs(t *testing.T) {
 		{TopicDaoVotingDelaySet, dao, "VotingDelaySet"},
 		{TopicDaoVotingPeriodSet, dao, "VotingPeriodSet"},
 		{TopicDaoQuorumNumeratorSet, dao, "QuorumNumeratorUpdated"},
+
+		// V4 (in development), pinned against the hand-written fragments in
+		// contracts/cosmicgame/v4abi.go.
+		{TopicArtAuctionConfigured, gameV4, "ArtAuctionConfigured"},
+		{TopicArtAuctionOpeningBidChanged, gameV4, "ArtAuctionOpeningBidChanged"},
+		{TopicArtAuctionNftsMinted, gameV4, "ArtAuctionNftsMinted"},
+		{TopicChaosZeroCycleFunded, gameV4, "ChaosZeroCycleFunded"},
+		{TopicAuctionBatchRegistered, artAuction, "AuctionBatchRegistered"},
+		{TopicAuctionBidPlaced, artAuction, "AuctionBidPlaced"},
+		{TopicAuctionRefundCredited, artAuction, "AuctionRefundCredited"},
+		{TopicAuctionRefundWithdrawn, artAuction, "AuctionRefundWithdrawn"},
+		{TopicAuctionSettled, artAuction, "AuctionSettled"},
+		{TopicAuctionNftDelivered, artAuction, "AuctionNftDelivered"},
+		{TopicAuctionProceedsForwarded, artAuction, "AuctionProceedsForwarded"},
+		{TopicAuctionSurplusForwarded, artAuction, "AuctionSurplusForwarded"},
 	}
 
 	for _, c := range cases {

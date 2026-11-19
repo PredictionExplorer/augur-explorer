@@ -89,10 +89,11 @@ func TestContractsAllListsEveryWatchedContract(t *testing.T) {
 		StakingRWalk:    ethcommon.HexToAddress("0x08"),
 		MarketingWallet: ethcommon.HexToAddress("0x09"),
 		Implementation:  ethcommon.HexToAddress("0x0a"),
+		ArtAuctions:     []ethcommon.Address{ethcommon.HexToAddress("0x0b")},
 	}
 	all := c.All()
-	if len(all) != 10 {
-		t.Fatalf("All() returned %d contracts, want 10", len(all))
+	if len(all) != 11 {
+		t.Fatalf("All() returned %d contracts, want 11", len(all))
 	}
 	seen := make(map[ethcommon.Address]bool, len(all))
 	for _, a := range all {

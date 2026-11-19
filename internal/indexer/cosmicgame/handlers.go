@@ -55,6 +55,13 @@ type Contracts struct {
 	// set grows at runtime as new PrizesWalletAddressChanged events arrive
 	// (Handlers.PrizesWallets).
 	PrizesWallets []ethcommon.Address
+	// ArtAuctions are every art-auction contract known at startup: each
+	// address an indexed ArtAuctionConfigured event (V4+) announced. Empty
+	// before the V4 upgrade. Superseded auction contracts keep emitting
+	// settle/deliver/forward events until drained, so all of them stay
+	// watched; the set grows at runtime as new ArtAuctionConfigured events
+	// arrive (Handlers.ArtAuctions).
+	ArtAuctions []ethcommon.Address
 
 	GameAid        int64
 	CosmicTokenAid int64
@@ -67,7 +74,8 @@ type Contracts struct {
 func (c Contracts) All() []ethcommon.Address {
 	implementations := c.allImplementations()
 	prizesWallets := c.allPrizesWallets()
-	all := make([]ethcommon.Address, 0, 8+len(prizesWallets)+len(implementations))
+	artAuctions := c.allArtAuctions()
+	all := make([]ethcommon.Address, 0, 8+len(prizesWallets)+len(implementations)+len(artAuctions))
 	all = append(all,
 		c.Game,
 		c.Signature,
@@ -79,6 +87,7 @@ func (c Contracts) All() []ethcommon.Address {
 		c.MarketingWallet,
 	)
 	all = append(all, prizesWallets...)
+	all = append(all, artAuctions...)
 	return append(all, implementations...)
 }
 
@@ -110,6 +119,19 @@ func (c Contracts) allPrizesWallets() []ethcommon.Address {
 	add(c.PrizesWallet)
 	for _, a := range c.PrizesWallets {
 		add(a)
+	}
+	return out
+}
+
+// allArtAuctions returns ArtAuctions without duplicates or the zero address.
+// There is no registry-row default: the set comes entirely from the indexed
+// ArtAuctionConfigured history and is empty before the V4 upgrade.
+func (c Contracts) allArtAuctions() []ethcommon.Address {
+	out := make([]ethcommon.Address, 0, len(c.ArtAuctions))
+	for _, a := range c.ArtAuctions {
+		if a != (ethcommon.Address{}) && !slices.Contains(out, a) {
+			out = append(out, a)
+		}
 	}
 	return out
 }
@@ -170,6 +192,17 @@ func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store
 		prizesWallets = append(prizesWallets, ethcommon.HexToAddress(hexAddr))
 	}
 
+	// Every art-auction contract an indexed ArtAuctionConfigured event (V4+)
+	// announced; empty before the V4 upgrade.
+	historicAuctions, err := repo.HistoricArtAuctions(ctx)
+	if err != nil {
+		return Contracts{}, addrs, fmt.Errorf("reading historic art auctions: %w", err)
+	}
+	artAuctions := make([]ethcommon.Address, 0, len(historicAuctions))
+	for _, hexAddr := range historicAuctions {
+		artAuctions = append(artAuctions, ethcommon.HexToAddress(hexAddr))
+	}
+
 	return Contracts{
 		Game:            ethcommon.HexToAddress(addrs.CosmicGameAddr),
 		Signature:       ethcommon.HexToAddress(addrs.CosmicSignatureAddr),
@@ -183,6 +216,7 @@ func BootstrapContracts(ctx context.Context, repo *cgstore.Repo, st *store.Store
 		Implementation:  ethcommon.HexToAddress(addrs.ImplementationAddr),
 		Implementations: implementations,
 		PrizesWallets:   prizesWallets,
+		ArtAuctions:     artAuctions,
 		GameAid:         gameAid,
 		CosmicTokenAid:  tokenAid,
 	}, addrs, nil
@@ -219,6 +253,8 @@ type Handlers struct {
 	gameABI            *abi.ABI
 	gameV2ABI          *abi.ABI
 	gameV3ABI          *abi.ABI
+	gameV4ABI          *abi.ABI
+	artAuctionABI      *abi.ABI
 	signatureABI       *abi.ABI
 	charityWalletABI   *abi.ABI
 	prizesWalletABI    *abi.ABI
@@ -245,6 +281,13 @@ type Handlers struct {
 	pwMu              sync.RWMutex
 	prizesWallets     []ethcommon.Address
 	onNewPrizesWallet func(ctx context.Context, wallet ethcommon.Address, blockNum int64)
+
+	// artAuctions is the live set of art-auction contracts (see
+	// Contracts.ArtAuctions); storeArtAuctionConfigured grows it and calls
+	// onNewArtAuction for addresses it has not seen.
+	aaMu            sync.RWMutex
+	artAuctions     []ethcommon.Address
+	onNewArtAuction func(ctx context.Context, auction ethcommon.Address, blockNum int64)
 }
 
 // New parses the contract ABIs, validates the dependencies and builds the
@@ -272,6 +315,7 @@ func New(cfg Config) (*Handlers, error) {
 		log:             logger,
 		implementations: cfg.Contracts.allImplementations(),
 		prizesWallets:   cfg.Contracts.allPrizesWallets(),
+		artAuctions:     cfg.Contracts.allArtAuctions(),
 	}
 	for _, a := range []struct {
 		dst  **abi.ABI
@@ -281,6 +325,8 @@ func New(cfg Config) (*Handlers, error) {
 		{&h.gameABI, "CosmicSignatureGame", cgc.CosmicSignatureGameABI},
 		{&h.gameV2ABI, "CosmicSignatureGameV2", cgc.CosmicSignatureGameV2ABI},
 		{&h.gameV3ABI, "CosmicSignatureGameV3", cgc.CosmicSignatureGameV3ABI},
+		{&h.gameV4ABI, "CosmicSignatureGameV4 (events)", cgc.GameV4ABI},
+		{&h.artAuctionABI, "CosmicSignatureArtAuction (events)", cgc.ArtAuctionABI},
 		{&h.signatureABI, "CosmicSignatureNft", cgc.CosmicSignatureNftABI},
 		{&h.charityWalletABI, "CharityWallet", cgc.CharityWalletABI},
 		{&h.prizesWalletABI, "PrizesWallet", cgc.PrizesWalletABI},

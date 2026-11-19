@@ -165,5 +165,24 @@ func (h *Handlers) eventHandlers() []indexer.EventHandler {
 		indexer.NewHandler(topicHash(TopicDaoVotingDelaySet), "DaoVotingDelaySet", dao, h.decodeDaoSettingChanged("VotingDelaySet", cgmodel.DaoSettingVotingDelay), h.storeDaoSettingChanged),
 		indexer.NewHandler(topicHash(TopicDaoVotingPeriodSet), "DaoVotingPeriodSet", dao, h.decodeDaoSettingChanged("VotingPeriodSet", cgmodel.DaoSettingVotingPeriod), h.storeDaoSettingChanged),
 		indexer.NewHandler(topicHash(TopicDaoQuorumNumeratorSet), "DaoQuorumNumeratorUpdated", dao, h.decodeDaoSettingChanged("QuorumNumeratorUpdated", cgmodel.DaoSettingQuorumNumerator), h.storeDaoSettingChanged),
+
+		// V4 (in development). Game-proxy events: the art-auction wiring
+		// announcements and the per-cycle ChaosZero market funding record.
+		indexer.NewHandler(topicHash(TopicArtAuctionConfigured), "ArtAuctionConfigured", game, h.decodeArtAuctionConfigured, h.storeArtAuctionConfigured),
+		indexer.NewHandler(topicHash(TopicArtAuctionOpeningBidChanged), "ArtAuctionOpeningBidChanged", game, h.decodeArtAuctionOpeningBidChanged, h.storeArtAuctionOpeningBidChanged),
+		indexer.NewHandler(topicHash(TopicArtAuctionNftsMinted), "ArtAuctionNftsMinted", game, h.decodeArtAuctionNftsMinted, h.storeArtAuctionNftsMinted),
+		indexer.NewHandler(topicHash(TopicChaosZeroCycleFunded), "ChaosZeroCycleFunded", game, h.decodeChaosZeroCycleFunded, h.storeChaosZeroCycleFunded),
+
+		// V4 (in development). CosmicSignatureArtAuction events; the source
+		// set is dynamic like the prizes wallets: ArtAuctionConfigured
+		// announces the contracts (art_auctions.go).
+		indexer.NewDynamicHandler(topicHash(TopicAuctionBatchRegistered), "AuctionBatchRegistered", h.artAuctionSources, h.decodeAuctionBatchRegistered, h.storeAuctionBatchRegistered),
+		indexer.NewDynamicHandler(topicHash(TopicAuctionBidPlaced), "AuctionBidPlaced", h.artAuctionSources, h.decodeAuctionBidPlaced, h.storeAuctionBidPlaced),
+		indexer.NewDynamicHandler(topicHash(TopicAuctionRefundCredited), "AuctionRefundCredited", h.artAuctionSources, h.decodeAuctionRefundCredited, h.storeAuctionRefundCredited),
+		indexer.NewDynamicHandler(topicHash(TopicAuctionRefundWithdrawn), "AuctionRefundWithdrawn", h.artAuctionSources, h.decodeAuctionRefundWithdrawn, h.storeAuctionRefundWithdrawn),
+		indexer.NewDynamicHandler(topicHash(TopicAuctionSettled), "AuctionSettled", h.artAuctionSources, h.decodeAuctionSettled, h.storeAuctionSettled),
+		indexer.NewDynamicHandler(topicHash(TopicAuctionNftDelivered), "AuctionNftDelivered", h.artAuctionSources, h.decodeAuctionNftDelivered, h.storeAuctionNftDelivered),
+		indexer.NewDynamicHandler(topicHash(TopicAuctionProceedsForwarded), "AuctionProceedsForwarded", h.artAuctionSources, h.decodeAuctionProceedsForwarded, h.storeAuctionProceedsForwarded),
+		indexer.NewDynamicHandler(topicHash(TopicAuctionSurplusForwarded), "AuctionSurplusForwarded", h.artAuctionSources, h.decodeAuctionSurplusForwarded, h.storeAuctionSurplusForwarded),
 	}
 }

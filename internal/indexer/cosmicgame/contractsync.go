@@ -12,7 +12,9 @@ import (
 	"fmt"
 	"log/slog"
 	"math/big"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -27,6 +29,10 @@ const (
 	contractMechanicsV1      int64 = 1
 	contractMechanicsV2      int64 = 2
 	contractMechanicsV3      int64 = 3
+	// contractMechanicsV4 is in development: V4 keeps every V3 getter and
+	// adds the art-auction/ChaosZero ones, probed through the hand-written
+	// GameV4GettersABI fragment until V4 ships and gets generated bindings.
+	contractMechanicsV4 int64 = 4
 )
 
 type contractParamSync struct {
@@ -76,6 +82,13 @@ func CheckContractParamsDrift(
 	v3, _ := cgc.NewCosmicSignatureGameV3(game, backend)
 	opts := &bind.CallOpts{Context: ctx, BlockNumber: new(big.Int).Set(header.Number)}
 	mechanics := probeContractMechanics(v1, v2, v3, opts)
+	v4 := newGameV4Caller(game, backend)
+	if mechanics == contractMechanicsV3 {
+		// V4 keeps every V3 getter; it is distinguished by its own.
+		if _, err := v4.artAuctionOpeningBid(opts); err == nil {
+			mechanics = contractMechanicsV4
+		}
+	}
 
 	drifted := 0
 	compare := func(name, table, column, chainValue string) error {
@@ -197,6 +210,56 @@ func CheckContractParamsDrift(
 		}
 	}
 
+	if mechanics >= contractMechanicsV4 {
+		if value, err := v4.artAuctionOpeningBid(opts); err != nil {
+			logger.Warn("contract drift audit: parameter skipped",
+				"parameter", "art_auction_opening_bid", "err", err)
+		} else if err := compare(
+			"art_auction_opening_bid",
+			"cg_adm_art_auction_opening_bid",
+			"opening_bid",
+			value.String(),
+		); err != nil {
+			return drifted, err
+		}
+
+		compareAddr := func(name, table, aidColumn string, chainAddr ethcommon.Address) error {
+			dbAddr, hasRow, err := repo.LatestAddressParam(ctx, table, aidColumn)
+			if err != nil {
+				return fmt.Errorf("%s: %w", name, err)
+			}
+			if !hasRow {
+				logger.Info("contract drift audit: no indexed history",
+					"parameter", name,
+					"chain_value", chainAddr.Hex())
+				return nil
+			}
+			if ethcommon.HexToAddress(dbAddr) != chainAddr {
+				drifted++
+				logger.Error("contract parameter drift",
+					"parameter", name,
+					"db_value", dbAddr,
+					"chain_value", chainAddr.Hex(),
+					"block", header.Number.String())
+			}
+			return nil
+		}
+		if addr, err := v4.artAuction(opts); err != nil {
+			logger.Warn("contract drift audit: parameter skipped",
+				"parameter", "art_auction_address", "err", err)
+		} else if err := compareAddr("art_auction_address",
+			"cg_art_auction_configured", "art_auction_aid", addr); err != nil {
+			return drifted, err
+		}
+		if addr, err := v4.chaosZeroMarket(opts); err != nil {
+			logger.Warn("contract drift audit: parameter skipped",
+				"parameter", "chaos_zero_market_address", "err", err)
+		} else if err := compareAddr("chaos_zero_market_address",
+			"cg_chaos_zero_cycle_funded", "market_aid", addr); err != nil {
+			return drifted, err
+		}
+	}
+
 	logger.Info("contract drift audit complete",
 		"drifted", drifted,
 		"mechanics", mechanics,
@@ -226,6 +289,46 @@ func probeContractMechanics(
 		}
 	}
 	return contractMechanicsUnknown
+}
+
+// gameV4Caller reads the V4-only getters through the hand-written
+// GameV4GettersABI fragment; V4 has no generated bindings yet.
+type gameV4Caller struct {
+	bound *bind.BoundContract
+}
+
+func newGameV4Caller(game ethcommon.Address, backend bind.ContractBackend) gameV4Caller {
+	parsed, err := abi.JSON(strings.NewReader(cgc.GameV4GettersABI))
+	if err != nil {
+		// The fragment is a compile-time constant; a parse failure is a
+		// programming error surfaced by the package tests.
+		panic(fmt.Sprintf("parsing GameV4GettersABI: %v", err))
+	}
+	return gameV4Caller{bound: bind.NewBoundContract(game, parsed, backend, nil, nil)}
+}
+
+func (c gameV4Caller) artAuctionOpeningBid(opts *bind.CallOpts) (*big.Int, error) {
+	var out []any
+	if err := c.bound.Call(opts, &out, "artAuctionOpeningBid"); err != nil {
+		return nil, err
+	}
+	return abi.ConvertType(out[0], new(big.Int)).(*big.Int), nil
+}
+
+func (c gameV4Caller) artAuction(opts *bind.CallOpts) (ethcommon.Address, error) {
+	var out []any
+	if err := c.bound.Call(opts, &out, "artAuction"); err != nil {
+		return ethcommon.Address{}, err
+	}
+	return *abi.ConvertType(out[0], new(ethcommon.Address)).(*ethcommon.Address), nil
+}
+
+func (c gameV4Caller) chaosZeroMarket(opts *bind.CallOpts) (ethcommon.Address, error) {
+	var out []any
+	if err := c.bound.Call(opts, &out, "chaosZeroMarket"); err != nil {
+		return ethcommon.Address{}, err
+	}
+	return *abi.ConvertType(out[0], new(ethcommon.Address)).(*ethcommon.Address), nil
 }
 
 func readDelayDuration(
@@ -259,7 +362,8 @@ func readCstReward(
 	opts *bind.CallOpts,
 	mechanics int64,
 ) (string, error) {
-	if mechanics == contractMechanicsV3 && v3 != nil {
+	// V4 keeps every V3 getter, so the V3 binding reads it there too.
+	if mechanics >= contractMechanicsV3 && v3 != nil {
 		value, err := v3.BidCstRewardAmountMultiplier(opts)
 		if err == nil {
 			return value.String(), nil
@@ -478,7 +582,9 @@ func buildContractParamSyncList(mechanics int64) []contractParamSync {
 				return value.String(), nil
 			},
 		})
-	case contractMechanicsV3:
+	case contractMechanicsV3, contractMechanicsV4:
+		// V4 keeps every V3-evented parameter; its own additions are
+		// compared separately in CheckContractParamsDrift.
 		parameters = append(parameters,
 			v3ContractParam(
 				"round_late_bid_duration_divisor",

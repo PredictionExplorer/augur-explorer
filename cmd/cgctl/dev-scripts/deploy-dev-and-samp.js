@@ -51,8 +51,20 @@ async function main() {
         await hre.ethers.getContractFactory("CosmicSignatureGameV3", owner);
         gameVersion = 3;
     } catch (e) { /* V1-only repo; leave the proxy as deployed */ }
-
     if (gameVersion === 3) {
+        // V4 (in development) adds the art auction and the ChaosZero cycle
+        // funding; its upgrade needs the auction contract and a market
+        // binding (the repo's own upgrade tests use ChaosZeroBindingTestDouble
+        // for the latter — the real market is a separate deployment).
+        try {
+            await hre.ethers.getContractFactory("CosmicSignatureGameV4", owner);
+            await hre.ethers.getContractFactory("CosmicSignatureArtAuction", owner);
+            await hre.ethers.getContractFactory("ChaosZeroBindingTestDouble", owner);
+            gameVersion = 4;
+        } catch (e) { /* V3 repo; stop the upgrade chain at V3 */ }
+    }
+
+    if (gameVersion >= 3) {
         console.log("Completing round zero on V1 (required before the V2 upgrade)...");
         const gq = { gasLimit: 12000000 };
         const block0 = await hre.ethers.provider.getBlock("latest");
@@ -80,6 +92,37 @@ async function main() {
             });
             await cosmicGameProxy.waitForDeployment();
             console.log("Proxy upgraded to " + upgradeName + ".");
+        }
+
+        if (gameVersion === 4) {
+            // initializeV4 (unlike reinitialize) takes the art auction and the
+            // ChaosZero market, validating their game()/nft()/cst()/source()
+            // bindings — mirror the repo's V4UpgradeTestHelpers.js: deploy the
+            // auction against the proxy+NFT and a source/market pair of
+            // ChaosZeroBindingTestDouble.
+            console.log("Deploying V4 companions (art auction + ChaosZero market double)...");
+            const nftAddr = await cosmicGameProxy.nft();
+            const tokenAddr = await cosmicGameProxy.token();
+            const auctionFactory = await hre.ethers.getContractFactory("CosmicSignatureArtAuction", owner);
+            const artAuction = await auctionFactory.deploy(cosmicGameAddr, nftAddr);
+            await artAuction.waitForDeployment();
+            const artAuctionAddr = await artAuction.getAddress();
+            const doubleFactory = await hre.ethers.getContractFactory("ChaosZeroBindingTestDouble", owner);
+            const czSource = await doubleFactory.deploy(cosmicGameAddr, tokenAddr, hre.ethers.ZeroAddress);
+            await czSource.waitForDeployment();
+            const czMarket = await doubleFactory.deploy(cosmicGameAddr, tokenAddr, await czSource.getAddress());
+            await czMarket.waitForDeployment();
+            const czMarketAddr = await czMarket.getAddress();
+
+            const v4Factory = await hre.ethers.getContractFactory("CosmicSignatureGameV4", owner);
+            cosmicGameProxy = await hre.upgrades.upgradeProxy(cosmicGameProxy, v4Factory, {
+                kind: "uups",
+                call: { fn: "initializeV4", args: [artAuctionAddr, czMarketAddr] },
+            });
+            await cosmicGameProxy.waitForDeployment();
+            console.log("Proxy upgraded to CosmicSignatureGameV4.");
+            console.log("CosmicSignatureArtAuction:", artAuctionAddr);
+            console.log("ChaosZero market (test double):", czMarketAddr);
         }
     }
 

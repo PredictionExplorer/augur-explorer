@@ -29,8 +29,11 @@ func unitContracts() Contracts {
 		StakingRWalk:    a(8),
 		MarketingWallet: a(9),
 		Implementation:  a(10),
-		GameAid:         1,
-		CosmicTokenAid:  3,
+		// One announced V4 art-auction contract, so the dynamic-source
+		// auction handlers declare a source in unit tests.
+		ArtAuctions:    []ethcommon.Address{a(11)},
+		GameAid:        1,
+		CosmicTokenAid: 3,
 	}
 }
 
@@ -64,9 +67,13 @@ func TestRegistryBuildsAndResolvesNames(t *testing.T) {
 	// failure events that replaced ArbitrumError), the six OpenZeppelin
 	// events inherited by the NFT and the token (two Approval sources,
 	// ApprovalForAll, DelegateChanged, DelegateVotesChanged,
-	// EIP712DomainChanged) and the ten Governor events of the DAO.
-	if got := len(reg.Handlers()); got != 106 {
-		t.Errorf("registered handlers = %d, want 106", got)
+	// EIP712DomainChanged), the ten Governor events of the DAO, and the
+	// twelve V4 (in development) events: four game-proxy events
+	// (ArtAuctionConfigured, ArtAuctionOpeningBidChanged,
+	// ArtAuctionNftsMinted, ChaosZeroCycleFunded) and the eight
+	// CosmicSignatureArtAuction events.
+	if got := len(reg.Handlers()); got != 118 {
+		t.Errorf("registered handlers = %d, want 118", got)
 	}
 
 	for _, c := range []struct{ topic, want string }{

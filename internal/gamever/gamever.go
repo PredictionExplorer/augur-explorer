@@ -16,7 +16,9 @@ package gamever
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 
@@ -30,6 +32,10 @@ const (
 	V1 Version = 1
 	V2 Version = 2
 	V3 Version = 3
+	// V4 is in development: detected by artAuctionOpeningBid(), a V4-only
+	// getter (probed through the hand-written GameV4GettersABI fragment
+	// until V4 ships and gets generated bindings).
+	V4 Version = 4
 )
 
 func (v Version) String() string { return fmt.Sprintf("V%d", int(v)) }
@@ -45,6 +51,9 @@ func (v Version) BidsTakeMinLimit() bool { return v >= V2 }
 // a sanity check that a game contract is deployed at all, so RPC failures
 // and wrong addresses surface as errors instead of being misreported as V1.
 func Detect(copts *bind.CallOpts, gameAddr common.Address, client bind.ContractCaller) (Version, error) {
+	if probeV4(copts, gameAddr, client) {
+		return V4, nil
+	}
 	v3, err := cgcontracts.NewCosmicSignatureGameV3Caller(gameAddr, client)
 	if err != nil {
 		return 0, fmt.Errorf("instantiating V3 caller: %w", err)
@@ -63,4 +72,23 @@ func Detect(copts *bind.CallOpts, gameAddr common.Address, client bind.ContractC
 		return 0, fmt.Errorf("no CosmicSignatureGame found at %s (lastBidderAddress() failed: %w)", gameAddr, err)
 	}
 	return V1, nil
+}
+
+// v4GettersABI is the parsed hand-written V4 getters fragment; V4 has no
+// generated bindings yet (the contracts are still in development).
+var v4GettersABI = func() abi.ABI {
+	parsed, err := abi.JSON(strings.NewReader(cgcontracts.GameV4GettersABI))
+	if err != nil {
+		panic(fmt.Sprintf("parsing GameV4GettersABI: %v", err))
+	}
+	return parsed
+}()
+
+// probeV4 reports whether the V4-only artAuctionOpeningBid() getter answers
+// at gameAddr. A revert (unrecognized selector) means the deployment is V3
+// or older.
+func probeV4(copts *bind.CallOpts, gameAddr common.Address, client bind.ContractCaller) bool {
+	bound := bind.NewBoundContract(gameAddr, v4GettersABI, client, nil, nil)
+	var out []any
+	return bound.Call(copts, &out, "artAuctionOpeningBid") == nil
 }

@@ -166,7 +166,7 @@ async function getGame() {
         process.exit(1);
     }
     // Attach the newest game ABI available (mainnet proxy runs V3).
-    for (const name of ["CosmicSignatureGameV3", "CosmicSignatureGameV2", "CosmicSignatureGame"]) {
+    for (const name of ["CosmicSignatureGameV4", "CosmicSignatureGameV3", "CosmicSignatureGameV2", "CosmicSignatureGame"]) {
         try { return await ethers.getContractAt(name, addr); } catch (e) { /* not in this repo */ }
     }
     throw new Error("No CosmicSignatureGame artifact found");
@@ -414,6 +414,20 @@ async function main() {
     // Tracking state shared across steps.
     let namedTokenDone = false;
     let secondPrizesWallet = null;
+
+    // V4 detection: the deploy script upgrades the proxy to V4 (and wires an
+    // art auction) only when the contracts repo ships the V4 sources; on a V3
+    // repo game.artAuction doesn't exist and S11 is skipped.
+    let artAuction = null;
+    if (typeof game.artAuction === "function") {
+        try {
+            const aaAddr = await game.artAuction();
+            if (aaAddr !== ethers.ZeroAddress) {
+                artAuction = await ethers.getContractAt("CosmicSignatureArtAuction", aaAddr);
+                console.log("V4 art auction detected:", aaAddr);
+            }
+        } catch (e) { /* V4 ABI attached but proxy still V3 */ }
+    }
 
     // -----------------------------------------------------------------------
     await step("S1: ETH donations", async () => {
@@ -772,6 +786,77 @@ async function main() {
     if (cz) await step("CZ-E: claim-triggered settlement of round 4", () => cz.phaseE());
 
     // -----------------------------------------------------------------------
+    // V4 art auction lifecycle. Runs after the last game claim (S10) while
+    // the current round has no bids (needed by inInactiveWindow; CZ-F below
+    // leaves a round OPEN with a bid, so S11 must precede it). It jumps the
+    // chain ~9 days forward (7-day lot eligibility + 48h auction duration),
+    // which CZ-F tolerates (its first-bid price just sits at the Dutch
+    // auction floor). Every V4 claim above already emitted
+    // ArtAuctionNftsMinted + ChaosZeroCycleFunded (game) and
+    // AuctionBatchRegistered (auction); this step exercises the rest.
+    if (artAuction) await step("S11: V4 art auction (bid/outbid/refund/settle/claim/forward)", async () => {
+        const g = { gasLimit: 1500000 };
+        const aaAddr = await artAuction.getAddress();
+
+        // initializeV4 emitted ArtAuctionConfigured at deploy time, outside
+        // populate's receipts — assert it on-chain instead of in the tally.
+        const confLogs = await game.queryFilter(game.filters.ArtAuctionConfigured());
+        if (confLogs.length === 0) throw new Error("no ArtAuctionConfigured event on chain (initializeV4 missing?)");
+
+        // ArtAuctionOpeningBidChanged: admin setter, round must be inactive
+        // (no game bid has landed in the current round at this point).
+        await inInactiveWindow(game, owner, async () => {
+            await TX(game.connect(owner).setArtAuctionOpeningBid(ethers.parseEther("0.002"), g));
+        });
+
+        // Take two lots from the first batch registered by the claims above.
+        const batches = recordedEvents(artAuction.interface, "AuctionBatchRegistered", aaAddr);
+        if (batches.length === 0) throw new Error("no AuctionBatchRegistered events recorded (V4 claims should register batches)");
+        const nftA = batches[0].args.firstNftId;       // full lifecycle lot
+        const nftB = batches[0].args.firstNftId + 1n;  // refund-withdrawal lot
+
+        // Pass the 7-day eligibility delay of every batch registered so far.
+        await increaseTime(7 * 24 * 3600 + 5);
+
+        // Lot A: opening bid (addr1), outbid (addr2, credits addr1's refund),
+        // self-raise by the leader (pays only the delta, ethPaid < amount).
+        let total = await artAuction.minimumNextBid(nftA);
+        await TX(artAuction.connect(addr1).bid(nftA, total, { value: total, ...g }));
+        const prevTotal = (total = await artAuction.minimumNextBid(nftA));
+        await TX(artAuction.connect(addr2).bid(nftA, total, { value: total, ...g }));
+        total = await artAuction.minimumNextBid(nftA);
+        await TX(artAuction.connect(addr2).bid(nftA, total, { value: total - prevTotal, ...g }));
+
+        // Lot B: bid + outbid, then both refund withdrawal variants
+        // (to self and to a third-party recipient).
+        let totalB = await artAuction.minimumNextBid(nftB);
+        await TX(artAuction.connect(addr3).bid(nftB, totalB, { value: totalB, ...g }));
+        totalB = await artAuction.minimumNextBid(nftB);
+        await TX(artAuction.connect(addr4).bid(nftB, totalB, { value: totalB, ...g }));
+        await TX(artAuction.connect(addr1).withdrawRefund(addr1.address, g));
+        await TX(artAuction.connect(addr3).withdrawRefund(addr5.address, g));
+
+        // Pass the 48h auction duration; settle both lots (anyone may call).
+        await increaseTime(48 * 3600 + 5);
+        await TX(artAuction.connect(owner).settle(nftA, g));
+        await TX(artAuction.connect(owner).settle(nftB, g));
+
+        // Winner delivers lot A to a chosen recipient (CS NFT Transfer from
+        // auction custody); lot B stays undelivered as an intermediate-state
+        // sample. Proceeds of both flow back into the game via donateEth.
+        await TX(artAuction.connect(addr2).claimNft(nftA, addr4.address, g));
+        await TX(artAuction.connect(owner).forwardProceeds(nftA, g));
+        await TX(artAuction.connect(owner).forwardProceeds(nftB, g));
+
+        // Surplus: force ETH above totalLiabilities onto the contract
+        // (ordinary transfers are rejected), then sweep it into the game.
+        const liabilities = await artAuction.totalLiabilities();
+        const forced = liabilities + ethers.parseEther("0.003");
+        await ethers.provider.send("hardhat_setBalance", [aaAddr, "0x" + forced.toString(16)]);
+        await TX(artAuction.connect(owner).forwardSurplus(g));
+    });
+
+    // -----------------------------------------------------------------------
     // Leave the NEXT round open and rich in data: everything before this is
     // settled, so this is the database's only intermediate-state sample
     // (open liquidity, OPEN badges, live implied odds). Ends with the cz
@@ -881,6 +966,24 @@ async function main() {
             ["EthReceived (PrizesWallet #2)", secondPrizesWallet.interface, "EthReceived", newAddr],
             ["TokenDonated (PrizesWallet #2)", secondPrizesWallet.interface, "TokenDonated", newAddr],
             ["DonatedTokenClaimed (PrizesWallet #2)", secondPrizesWallet.interface, "DonatedTokenClaimed", newAddr],
+        );
+    }
+    if (artAuction) {
+        // ArtAuctionConfigured is deploy-time only (initializeV4); S11 asserts
+        // it on-chain via queryFilter instead of through this receipt tally.
+        const aaAddr = await artAuction.getAddress();
+        expected.push(
+            ["ArtAuctionOpeningBidChanged (V4)", game.interface, "ArtAuctionOpeningBidChanged", gameAddr],
+            ["ArtAuctionNftsMinted (V4)", game.interface, "ArtAuctionNftsMinted", gameAddr],
+            ["ChaosZeroCycleFunded (V4)", game.interface, "ChaosZeroCycleFunded", gameAddr],
+            ["AuctionBatchRegistered", artAuction.interface, "AuctionBatchRegistered", aaAddr],
+            ["AuctionBidPlaced", artAuction.interface, "AuctionBidPlaced", aaAddr],
+            ["AuctionRefundCredited", artAuction.interface, "AuctionRefundCredited", aaAddr],
+            ["AuctionRefundWithdrawn", artAuction.interface, "AuctionRefundWithdrawn", aaAddr],
+            ["AuctionSettled", artAuction.interface, "AuctionSettled", aaAddr],
+            ["AuctionNftDelivered", artAuction.interface, "AuctionNftDelivered", aaAddr],
+            ["AuctionProceedsForwarded", artAuction.interface, "AuctionProceedsForwarded", aaAddr],
+            ["AuctionSurplusForwarded", artAuction.interface, "AuctionSurplusForwarded", aaAddr],
         );
     }
     // Environment-dependent: on Hardhat the ArbSys precompile is missing, so

@@ -130,6 +130,27 @@ const (
 	TopicDaoVotingDelaySet       = "c565b045403dc03c2eea82b81a0465edad9e2e7fc4d97e11421c209da93d7a93" // GovernorSettings.sol:VotingDelaySet
 	TopicDaoVotingPeriodSet      = "7e3f7f0708a84de9203036abaa450dccc85ad5ff52f78c170f3edb55cf5e8828" // GovernorSettings.sol:VotingPeriodSet
 	TopicDaoQuorumNumeratorSet   = "0553476bf02ef2726e8ce5ced78d63e26e602e4a2257b1f559418e24b4633997" // GovernorVotesQuorumFraction.sol:QuorumNumeratorUpdated
+
+	// V4 (in development; pinned against the hand-written fragments in
+	// contracts/cosmicgame/v4abi.go until V4 ships).
+
+	// Game proxy (CosmicSignatureGameV4).
+
+	TopicArtAuctionConfigured        = "ad558f714ada7c55a9286f1feda611c5d3c2adf418189ebd0cb705e47e65f6e4" // ICosmicSignatureGameV4.sol:ArtAuctionConfigured
+	TopicArtAuctionOpeningBidChanged = "e53481663bc94bcbf68fc5710ea1db611f200778be705c2fc23e1907191a85b5" // ICosmicSignatureGameV4.sol:ArtAuctionOpeningBidChanged
+	TopicArtAuctionNftsMinted        = "6bfc00849a0ba73bdf2be0b126c22d5854c1c0a41920f25280c1750f461479aa" // ICosmicSignatureGameV4.sol:ArtAuctionNftsMinted
+	TopicChaosZeroCycleFunded        = "2429bfcae32d6e6d5d0ddf22becfb95cd78ef4eb7da8394ee4f51200ed752b5e" // ICosmicSignatureGameV4.sol:ChaosZeroCycleFunded
+
+	// CosmicSignatureArtAuction.
+
+	TopicAuctionBatchRegistered   = "f9b36dae23102f057caa91b20d9647c7fcf3d54e1cadcbe15670193e9d6e6a48" // ICosmicSignatureArtAuction.sol:AuctionBatchRegistered
+	TopicAuctionBidPlaced         = "c33f84eb636fee63309cc67c261d1a4e298e245ae7192141c2093e37d83efd69" // ICosmicSignatureArtAuction.sol:AuctionBidPlaced
+	TopicAuctionRefundCredited    = "924e4d9b37269b986798e57ca26c42f54b8ef98cbe5ba36729981d49d96d68bf" // ICosmicSignatureArtAuction.sol:AuctionRefundCredited
+	TopicAuctionRefundWithdrawn   = "d9b108dc388610b74f575860e0229fe8c94ed847a4183ce8df02e9a1b1594a1f" // ICosmicSignatureArtAuction.sol:AuctionRefundWithdrawn
+	TopicAuctionSettled           = "a3f81c0e157dc1e05cb31e254314bbde8e3878d9ff78b10ef6abfe316492bfbe" // ICosmicSignatureArtAuction.sol:AuctionSettled
+	TopicAuctionNftDelivered      = "95cb748a59a590d413a7fd46f72865b60d8b63ecaa9fdc24007d937fe6839124" // ICosmicSignatureArtAuction.sol:AuctionNftDelivered
+	TopicAuctionProceedsForwarded = "4ba11669a52a3f4354b5a4a4690d391d1ca01e20ecc396b1ed3d0173833aa424" // ICosmicSignatureArtAuction.sol:AuctionProceedsForwarded
+	TopicAuctionSurplusForwarded  = "c556a5df46fbb7e67ffc50a4543ea2ac170d39948ad2ad23b07df52e30c84b31" // ICosmicSignatureArtAuction.sol:AuctionSurplusForwarded
 )
 
 // topicHash converts one of the topic-hash constants above to a common.Hash

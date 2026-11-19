@@ -78,6 +78,10 @@ func TestEveryABIEventHasHandler(t *testing.T) {
 		{"StakingWalletRandomWalkNft", cgc.StakingWalletRandomWalkNftABI, c.StakingRWalk},
 		{"MarketingWallet", cgc.MarketingWalletABI, c.MarketingWallet},
 		{"DonatedTokenHolder", cgc.DonatedTokenHolderABI, ethcommon.Address{}},
+		// V4 (in development): the game-proxy additions and the announced
+		// art-auction contract (unitContracts seeds one in ArtAuctions).
+		{"CosmicSignatureGameV4 (events)", cgc.GameV4ABI, c.Game},
+		{"CosmicSignatureArtAuction (events)", cgc.ArtAuctionABI, c.ArtAuctions[0]},
 	}
 
 	for _, d := range deployed {
